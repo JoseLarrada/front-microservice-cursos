@@ -13,20 +13,20 @@ export const cursosKeys = {
 // ─── Queries ───────────────────────────────────────────────────────────────────
 
 /**
- * Hook para obtener todos los cursos
+ * GET / → lista todos los cursos (sin alumnos populados)
  */
 export function useCursos(options = {}) {
   return useQuery({
     queryKey: cursosKeys.lists(),
     queryFn: cursosService.getAll,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5,
     ...options,
   });
 }
 
 /**
- * Hook para obtener un curso por ID
- * @param {number|string} id
+ * GET /{id} → obtiene el curso con sus alumnos populados
+ * @param {number} id
  */
 export function useCurso(id, options = {}) {
   return useQuery({
@@ -37,10 +37,11 @@ export function useCurso(id, options = {}) {
   });
 }
 
-// ─── Mutations ─────────────────────────────────────────────────────────────────
+// ─── Mutations CRUD ────────────────────────────────────────────────────────────
 
 /**
- * Hook para crear un curso
+ * POST / → crea un nuevo curso
+ * body: { nombre: string }
  */
 export function useCrearCurso() {
   const queryClient = useQueryClient();
@@ -53,7 +54,8 @@ export function useCrearCurso() {
 }
 
 /**
- * Hook para actualizar un curso
+ * PUT /{id} → actualiza el nombre de un curso
+ * body: { nombre: string }
  */
 export function useActualizarCurso() {
   const queryClient = useQueryClient();
@@ -67,7 +69,7 @@ export function useActualizarCurso() {
 }
 
 /**
- * Hook para eliminar un curso
+ * DELETE /{id} → elimina un curso
  */
 export function useEliminarCurso() {
   const queryClient = useQueryClient();
@@ -79,14 +81,19 @@ export function useEliminarCurso() {
   });
 }
 
+// ─── Mutations relación Curso ↔ Alumno ─────────────────────────────────────────
+
 /**
- * Hook para asignar un alumno a un curso
+ * PUT /asignaralumno/{cursoid}
+ * Asigna un alumno ya existente en msvc-alumnos a un curso.
+ * @param {{ cursoId: number, alumno: { id: number } }} vars
+ * @returns { Alumno } alumno asignado
  */
 export function useAsignarAlumno() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ cursoId, alumnoId }) =>
-      cursosService.asignarAlumno(cursoId, alumnoId),
+    mutationFn: ({ cursoId, alumno }) =>
+      cursosService.asignarAlumno(cursoId, alumno),
     onSuccess: (_, { cursoId }) => {
       queryClient.invalidateQueries({ queryKey: cursosKeys.detail(cursoId) });
     },
@@ -94,15 +101,55 @@ export function useAsignarAlumno() {
 }
 
 /**
- * Hook para eliminar un alumno de un curso
+ * POST /crearalumno/{cursoid}
+ * Crea un alumno nuevo en msvc-alumnos y lo asigna al curso en un solo paso.
+ * @param {{ cursoId: number, alumno: { nombre, correo, contrasena } }} vars
+ * @returns { Alumno } alumno creado y asignado
  */
-export function useEliminarAlumnoDeCurso() {
+export function useCrearAlumnoEnCurso() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ cursoId, alumnoId }) =>
-      cursosService.eliminarAlumno(cursoId, alumnoId),
+    mutationFn: ({ cursoId, alumno }) =>
+      cursosService.crearAlumnoEnCurso(cursoId, alumno),
     onSuccess: (_, { cursoId }) => {
       queryClient.invalidateQueries({ queryKey: cursosKeys.detail(cursoId) });
     },
   });
 }
+
+/**
+ * DELETE /quitar-alumno/{cursoid}
+ * Quita (desvincula) un alumno del curso sin eliminarlo de msvc-alumnos.
+ * @param {{ cursoId: number, alumno: { id: number } }} vars
+ * @returns { Alumno } alumno desvinculado
+ */
+export function useQuitarAlumno() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cursoId, alumno }) =>
+      cursosService.quitarAlumno(cursoId, alumno),
+    onSuccess: (_, { cursoId }) => {
+      queryClient.invalidateQueries({ queryKey: cursosKeys.detail(cursoId) });
+    },
+  });
+}
+
+/**
+ * DELETE /eliminarcursoalumno/{id}
+ * Elimina el registro CursoAlumno por su id interno.
+ * Usado por msvc-alumnos al borrar un alumno para limpiar relaciones.
+ * @param {number} id - id del registro CursoAlumno
+ */
+export function useEliminarCursoAlumno() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: cursosService.eliminarCursoAlumno,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cursosKeys.all });
+    },
+  });
+}
+
+// ─── Alias de compatibilidad ───────────────────────────────────────────────────
+/** @deprecated usar useQuitarAlumno */
+export const useEliminarAlumnoDeCurso = useQuitarAlumno;

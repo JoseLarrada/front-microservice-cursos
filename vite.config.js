@@ -14,4 +14,20 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      // /api/cursos/foo  →  http://localhost:8082/foo  (context path '/')
+      "/api/cursos": {
+        target: "http://localhost:8082",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/cursos/, ""),
+      },
+      // /api/alumnos/foo  →  http://localhost:8080/foo  (context path '/')
+      "/api/alumnos": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/alumnos/, ""),
+      },
+    },
+  },
 });
