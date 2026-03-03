@@ -3,7 +3,7 @@ import axios from "axios";
 // En dev: las peticiones pasan por el proxy de Vite → sin CORS
 // En prod: apunta directamente al microservicio
 const baseURL = import.meta.env.DEV
-  ? "/api/alumnos"
+  ? "/api/alumnos"  // El proxy reescribe y elimina /api/alumnos
   : import.meta.env.VITE_USUARIOS_API_URL;
 
 const usuariosClient = axios.create({

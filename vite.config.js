@@ -16,15 +16,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // /api/cursos/foo  →  http://localhost:8082/foo  (context path '/')
+      // /api/cursos/foo  →  http://localhost:8002/foo  (context path '/')
       "/api/cursos": {
-        target: "http://localhost:8082",
+        target: "http://localhost:8002",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/cursos/, ""),
       },
-      // /api/alumnos/foo  →  http://localhost:8080/foo  (context path '/')
+      // /api/alumnos/foo  →  http://localhost:8001/foo  (context path '/')
       "/api/alumnos": {
-        target: "http://localhost:8080",
+        target: "http://localhost:8001",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/alumnos/, ""),
       },
